@@ -334,8 +334,9 @@ write_shinydomino_appdir = function(shiny_app) {
   # shiny_app_dir = gsub(x = shiny_app, pattern = "[^/]+$",replacement = "")
   # 
   # writeLines(shiny_app, paste0(shiny_app_dir,".shinydominoes_config"))
+  dir = Sys.getenv("DOMINO_WORKING_DIR")
   
-  writeLines(shiny_app, ".shinydominoes_config")
+  writeLines(shiny_app, paste0(dir,"/shinydominoes_config.txt"))
   
 }
 
