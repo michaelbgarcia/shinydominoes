@@ -1,4 +1,5 @@
 # Project Delete
+devtools::install_local("shinydominoes-master@6936616b2e3.zip")
 library(shinydominoes)
 
 project_delete(owner_name = Sys.getenv("DOMINO_PROJECT_OWNER"),

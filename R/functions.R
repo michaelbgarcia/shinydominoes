@@ -26,6 +26,7 @@ ep_project_id = function(owner_name, project_name) {
   ep = paste0("/v4/gateway/projects/findProjectByOwnerAndName?ownerName=",owner_name,"&projectName=",project_name)
   return(ep)
 }
+ep_project_summary = function(project_id) {paste0("/v4/projects/",project_id)}
 ep_project_list = function() {paste0("/v4/gateway/projects?relationship=Owned&showCompleted=false")}
 ep_scheduledrun_create = function(owner_name, project_name) {paste0("/u/mgarc135/",project_name,"/scheduledruns")}
 #ep_scheduledrun_delete = function(owner_name, run_id) {paste0("/u/mgarc135/PatientMapping_Backup/scheduledruns/unschedule")}
@@ -46,19 +47,32 @@ projects_get = function(api_key, host) {
     content_type("application/json")
   )
 }
+
+# Get project summary
+#' @export
+projects_get_details = function(project_id, api_key, host) {
+  GET(
+    url = paste0(host,ep_project_summary(project_id)),
+    add_headers(`X-Domino-Api-Key` = api_key),
+    content_type("application/json")
+  )
+}
+
 # Schedule runs ----
 #' @export
-schedulerun_create = function(owner_name, project_name, api_key, host) {
+schedulerun_create = function(owner_name, project_name, project_id, hrs_expire, api_key, host) {
 
+  if(missing(hrs_expire)) hrs_expire = 4
+  
   body_list = list(
     title =  'self_destruct',
     commandToRun =  'domino_project_delete.R',
     overrideHardwareTierId =  'small-k8s',
-    overrideEnvironmentId =  '5e8523164faead0008631b88',
+    overrideEnvironmentId =  '5df81277c552390008eab913',
     datasetConfigName =  '',
     `schedule-run` =  'custom',
     clientTimezone =  'America/New_York',
-    customCronString = '0 0 0/4 * * ?',
+    customCronString = paste0('0 0 ',hrs_expire,'/',hrs_expire,' * * ?'),
     allowConcurrentRuns =  'false',
     notificationList =  '',
     publishModelId =  ''
@@ -72,7 +86,24 @@ schedulerun_create = function(owner_name, project_name, api_key, host) {
     verbose(),
     config(http_version=2)
   )
+  
+  # Update description of project with time expire
+  start_time = Sys.time()
+  stop_time = start_time + hrs_expire * 3600 #(sec / hr)
 
+  body_list_patch = list(
+    description = paste0("Project expires: ",stop_time)
+  )
+  
+  PATCH(
+    url = paste0(host,ep_project_summary(project_id)),
+    add_headers(`X-Domino-Api-Key` = api_key),
+    body = toJSON(body_list_patch, auto_unbox = TRUE),
+    content_type("application/json"),
+    verbose(),
+    config(http_version=2)
+  )
+  
 }
 
 # app.sh File upload ----
