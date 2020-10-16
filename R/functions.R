@@ -108,8 +108,12 @@ schedulerun_create = function(owner_name, project_name, project_id, hrs_expire, 
 
 # app.sh File upload ----
 #' @export
-project_file_upload_shell = function(owner_name, project_name, api_key, host) {
-  file = "R -e 'shiny::runApp(\"app_child.R\", port=8888, host=\"0.0.0.0\")'"
+project_file_upload_shell = function(owner_name, project_name, shiny_app, api_key, host) {
+  if(missing(shiny_app)) {
+    stop("You must supply the path of your Shiny app")
+  } 
+
+  file = paste0("R -e 'shiny::runApp(\"",shiny_app,"\", port=8888, host=\"0.0.0.0\")'")
   PUT(
     url = paste0(host,ep_file_upload(owner_name = owner_name, project_name = project_name, file_path = "app.sh")),
     body = file,
@@ -317,22 +321,22 @@ write_master_app = function() {
 
 
 # Write main analytics app
-#' @export
-write_child_app = function(shiny_app) {
 
-  if(missing(shiny_app)) {
-    stop("You must supply the path of your Shiny app")
-  } else {
-    # app_path = paste(app_dir, shiny_app, sep = "/")
-    app_content = try(readLines(shiny_app))
-    if("try-error" %in% class(app_content)) stop("App file does not exist or is corrupted")
-    if(length(app_content) == 0) stop("App file is empty")
-
-    shiny_app_dir = gsub(x = shiny_app, pattern = "[^/]+$",replacement = "")
-
-    file.copy(from = shiny_app, to = paste0(shiny_app_dir,"app_child.R"))
-  }
-}
+# write_child_app = function(shiny_app) {
+# 
+#   if(missing(shiny_app)) {
+#     stop("You must supply the path of your Shiny app")
+#   } else {
+#     # app_path = paste(app_dir, shiny_app, sep = "/")
+#     app_content = try(readLines(shiny_app))
+#     if("try-error" %in% class(app_content)) stop("App file does not exist or is corrupted")
+#     if(length(app_content) == 0) stop("App file is empty")
+# 
+#     shiny_app_dir = gsub(x = shiny_app, pattern = "[^/]+$",replacement = "")
+# 
+#     file.copy(from = shiny_app, to = paste0(shiny_app_dir,"app_child.R"))
+#   }
+# }
 
 #Initiate shinydominoes
 #' @export
@@ -340,19 +344,14 @@ shinydominoes_init = function(shiny_app) {
   cat("Initializing shinydominoes...\n")
   if(missing(shiny_app)) {
     stop("You must supply the path of your Shiny app")
-  } else {
-    # app_path = paste(app_dir, shiny_app, sep = "/")
-    app_content = try(readLines(shiny_app))
-    if("try-error" %in% class(app_content)) stop("App file does not exist or is corrupted")
-    if(length(app_content) == 0) stop("App file is empty")
   }
 
   cat("Shiny app found\n")
   cat("Creating master app\n")
   write_master_app()
   cat("app_master.R created\n")
-  cat("Creating child app\n")
-  write_child_app(shiny_app)
-  cat("app_child.R created\n")
+  # cat("Creating child app\n")
+  # write_child_app(shiny_app)
+  # cat("app_child.R created\n")
 }
 
