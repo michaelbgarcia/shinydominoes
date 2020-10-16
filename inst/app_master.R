@@ -127,7 +127,7 @@ server <- function(input, output, session) {
         )
       } %>%
       bind_rows() %>%
-      filter(grepl("_childproject",name)) %>%
+      filter(grepl(paste(project_this,"childproject",sep = "_"),name)) %>%
       {
         if(nrow(.) > 0) {
           rowwise(.) %>%
