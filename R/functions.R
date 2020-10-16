@@ -325,7 +325,7 @@ write_master_app = function() {
 
 # Write main analytics app - config file
 #' @export
-write_shinydomino_appdir = function(shiny_app) {
+write_shinydominoes_appdir = function(shiny_app) {
   
   if(missing(shiny_app)) {
     stop("You must supply the path of your Shiny app")
@@ -335,8 +335,11 @@ write_shinydomino_appdir = function(shiny_app) {
   # 
   # writeLines(shiny_app, paste0(shiny_app_dir,".shinydominoes_config"))
   dir = Sys.getenv("DOMINO_WORKING_DIR")
+  file_dir = paste0(dir,"/shinydominoes_config.txt")
   
-  writeLines(shiny_app, paste0(dir,"/shinydominoes_config.txt"))
+  writeLines(shiny_app, file_dir)
+  
+  cat(paste0("config file written to ",file_dir,"\n"))
   
 }
 
@@ -367,7 +370,7 @@ shinydominoes_init = function(shiny_app) {
   }
 
   cat("Shiny app found\n")
-  write_shinydomino_appdir(shiny_app)
+  write_shinydominoes_appdir(shiny_app)
   
   cat("Creating master app\n")
   write_master_app()
