@@ -108,11 +108,15 @@ schedulerun_create = function(owner_name, project_name, project_id, hrs_expire, 
 
 # app.sh File upload ----
 #' @export
-project_file_upload_shell = function(owner_name, project_name, shiny_app, api_key, host) {
-  if(missing(shiny_app)) {
-    stop("You must supply the path of your Shiny app")
-  } 
-
+project_file_upload_shell = function(owner_name, project_name, api_key, host) {
+  
+  shiny_app_config = ".shinydominoes_config"
+  
+  app_content = try(readLines(shiny_app_config))
+  if("try-error" %in% class(app_content)) stop("app config file not found. Did you run 'shinydominoes::init()?'")
+  if(length(app_content) == 0) stop("app config file not found. Did you run 'shinydominoes::init()?'")
+  
+  shiny_app = readLines(".shinydominoes_config")[[1]]
   file = paste0("R -e 'shiny::runApp(\"",shiny_app,"\", port=8888, host=\"0.0.0.0\")'")
   PUT(
     url = paste0(host,ep_file_upload(owner_name = owner_name, project_name = project_name, file_path = "app.sh")),
@@ -319,6 +323,21 @@ write_master_app = function() {
              "app.sh")
 }
 
+# Write main analytics app - config file
+#' @export
+write_shinydomino_appdir = function(shiny_app) {
+  
+  if(missing(shiny_app)) {
+    stop("You must supply the path of your Shiny app")
+  } 
+  
+  # shiny_app_dir = gsub(x = shiny_app, pattern = "[^/]+$",replacement = "")
+  # 
+  # writeLines(shiny_app, paste0(shiny_app_dir,".shinydominoes_config"))
+  
+  writeLines(shiny_app, ".shinydominoes_config")
+  
+}
 
 # Write main analytics app
 
@@ -347,6 +366,8 @@ shinydominoes_init = function(shiny_app) {
   }
 
   cat("Shiny app found\n")
+  write_shinydomino_appdir(shiny_app)
+  
   cat("Creating master app\n")
   write_master_app()
   cat("app_master.R created\n")
