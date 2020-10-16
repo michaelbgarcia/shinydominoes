@@ -110,7 +110,8 @@ schedulerun_create = function(owner_name, project_name, project_id, hrs_expire, 
 #' @export
 project_file_upload_shell = function(owner_name, project_name, api_key, host) {
   
-  shiny_app_config = ".shinydominoes_config"
+  dir = Sys.getenv("DOMINO_WORKING_DIR")
+  shiny_app_config = paste0(dir,"/.shinydominoes_config")
   
   app_content = try(readLines(shiny_app_config))
   if("try-error" %in% class(app_content)) stop("app config file not found. Did you run 'shinydominoes::init()?'")
@@ -335,7 +336,7 @@ write_shinydominoes_appdir = function(shiny_app) {
   # 
   # writeLines(shiny_app, paste0(shiny_app_dir,".shinydominoes_config"))
   dir = Sys.getenv("DOMINO_WORKING_DIR")
-  file_dir = paste0(dir,"/shinydominoes_config.txt")
+  file_dir = paste0(dir,"/.shinydominoes_config")
   
   writeLines(shiny_app, file_dir)
   
