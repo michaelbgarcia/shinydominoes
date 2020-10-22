@@ -201,7 +201,7 @@ server <- function(input, output, session) {
         content() %>% pluck("id")
 
       # Start app
-      app_start(app_id = app_id_new, api_key = api_key, host = host)
+      app_start(app_id = app_id_new, hardware_tier_id = input$hardware_select,api_key = api_key, host = host)
 
       # Schedule project deletion
       project_file_upload_delete(owner_name, project_name_new, api_key, host)
