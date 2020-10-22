@@ -22,6 +22,7 @@ ep_file_upload = function(owner_name, project_name, file_path) {paste0("/v1/proj
 ep_project_create = function() {paste0("/v4/projects")}
 ep_project_delete = function(owner_name, project_name) {paste0("/v1/projects/",owner_name,"/",project_name)}
 ep_project_copy = function(project_id) {paste0("/v4/projects/",project_id,"/copy")}
+ep_project_hardware = function(project_id) {paste0("/v4/projects/",project_id,"/hardwareTiers")}
 ep_project_id = function(owner_name, project_name) {
   ep = paste0("/v4/gateway/projects/findProjectByOwnerAndName?ownerName=",owner_name,"&projectName=",project_name)
   return(ep)
@@ -56,6 +57,27 @@ projects_get_details = function(project_id, api_key, host) {
     add_headers(`X-Domino-Api-Key` = api_key),
     content_type("application/json")
   )
+}
+
+# Get project hardware tiers
+#' @export
+projects_get_hardware = function(project_id, api_key, host) {
+  GET(
+    url = paste0(host,ep_project_hardware(project_id)),
+    add_headers(`X-Domino-Api-Key` = api_key),
+    content_type("application/json")
+  )
+}
+
+#' @export
+projects_get_hardware_tbl = function(project_id, api_key, host) {
+  projects_get_hardware(project_id, api_key, host) %>% content() %>%
+    {
+      tibble(
+        id = map(., pluck("hardwareTier")) %>% map(., pluck("id")) %>% flatten_chr(),
+        name = map(., pluck("hardwareTier")) %>% map(., pluck("name")) %>% flatten_chr()
+      )
+    }
 }
 
 # Schedule runs ----

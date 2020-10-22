@@ -1,7 +1,7 @@
 # app_master.R
 
-install.packages("reactable")
-devtools::install_github("michaelbgarcia/shinydominoes", ref = "main")
+# install.packages("reactable")
+# devtools::install_github("michaelbgarcia/shinydominoes", ref = "main")
 
 library(shiny)
 library(shinydashboard)
@@ -17,9 +17,19 @@ library(shinydominoes)
 
 host = "https://opendatasciencelab.jnj.com"
 api_key = Sys.getenv("DOMINO_USER_API_KEY")
-project_this = Sys.getenv("DOMINO_PROJECT_NAME")
 owner_name = Sys.getenv("DOMINO_PROJECT_OWNER")
 owner_id = get_owner_id(api_key, host)
+project_this = Sys.getenv("DOMINO_PROJECT_NAME")
+project_this_id = get_project_id(owner_name = owner_name, 
+                                 project_name = project_this, 
+                                 api_key = api_key, 
+                                 host = host)
+
+
+# Get hardware Tiers
+
+hardware_tbl = projects_get_hardware_tbl(project_this_id, api_key, host)
+hardware_list = hardware_tbl$id %>% as.list() %>% set_names(hardware_tbl$name)
 
 ui = navbarPage(
   title = project_this,
@@ -44,6 +54,10 @@ ui = navbarPage(
                             min = 1,
                             max = 8,
                             step = 1),
+               selectInput(inputId = "hardware_select",
+                           label = "Select Hardware Tier",
+                           choices = hardware_list,
+                           selected = "medium-k8s"),
                hr(),
                actionButton(inputId = "start_app",
                             label = "Start a New App Instance",
@@ -164,14 +178,12 @@ server <- function(input, output, session) {
       # Hash for project & app
       hash = as.integer(Sys.time())
 
-      # Get parent project id
-      project_id = get_project_id(owner_name = owner_name, project_name = project_this, api_key = api_key, host = host)
       # Create new project name
       project_name_new = project_create_name(project_name = project_this, hash = hash)
 
       # Copy Project
       project_id_new = project_copy(owner_id = owner_id,
-                                    project_id = project_id,
+                                    project_id = project_this_id,
                                     project_name_new = project_name_new,
                                     api_key = api_key, host = host) %>%
         content() %>% pluck("id")
