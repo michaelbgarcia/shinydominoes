@@ -17,9 +17,19 @@ library(shinydominoes)
 
 host = "https://opendatasciencelab.jnj.com"
 api_key = Sys.getenv("DOMINO_USER_API_KEY")
-project_this = Sys.getenv("DOMINO_PROJECT_NAME")
 owner_name = Sys.getenv("DOMINO_PROJECT_OWNER")
 owner_id = get_owner_id(api_key, host)
+project_this = Sys.getenv("DOMINO_PROJECT_NAME")
+project_this_id = get_project_id(owner_name = owner_name, 
+                                 project_name = project_this, 
+                                 api_key = api_key, 
+                                 host = host)
+
+
+# Get hardware Tiers
+
+hardware_tbl = projects_get_hardware_tbl(project_this_id, api_key, host)
+hardware_list = hardware_tbl$id %>% as.list() %>% set_names(hardware_tbl$name)
 
 ui = navbarPage(
   title = project_this,
@@ -44,12 +54,16 @@ ui = navbarPage(
                             min = 1,
                             max = 8,
                             step = 1),
+               selectInput(inputId = "hardware_select",
+                           label = "Select Hardware Tier",
+                           choices = hardware_list,
+                           selected = "medium-k8s"),
                hr(),
                actionButton(inputId = "start_app",
                             label = "Start a New App Instance",
                             style = "color:white",
                             class = "btn-primary")
-               ),
+             ),
              mainPanel = mainPanel(
                shinydashboard::box(title = "Existing Applications", width = 12,
                                    disabled(
@@ -71,25 +85,25 @@ ui = navbarPage(
 
 
 server <- function(input, output, session) {
-
+  
   reac_data = reactiveValues(app_url_view = NULL,
                              project_tbl = NULL)
   reac_table = reactiveValues(rows_selected = NA,
                               updated = 0)
-
+  
   # reac_timer = reactiveValues(tick = 0,
   #                             initialize_app = 0,
   #                             start_app = 0,
   #                             stop_app = 0)
-
-
+  
+  
   # Initialize reactable
   output$table <- renderReactable({
     # req(reac_data$project_tbl)
     # reactable_project_tbl(reac_data$project_tbl, reac_table$rows_selected)
     # Initialize tibble
     my_tbl = tibble(id = character(0), name = character(0),
-    app_status = character(0), app_url = character(0), time_left = character(0))
+                    app_status = character(0), app_url = character(0), time_left = character(0))
     reactable(my_tbl,
               selection = "multiple",
               paginationType = "simple",
@@ -157,44 +171,42 @@ server <- function(input, output, session) {
     #   reac_table$updated = reac_table$updated + 1
     # })
   }
-
+  
   observeEvent(input$start_app, priority = 5, {
     withProgress(message = 'Starting a new application instance', value = 1, {
-
+      
       # Hash for project & app
       hash = as.integer(Sys.time())
-
-      # Get parent project id
-      project_id = get_project_id(owner_name = owner_name, project_name = project_this, api_key = api_key, host = host)
+      
       # Create new project name
       project_name_new = project_create_name(project_name = project_this, hash = hash)
-
+      
       # Copy Project
       project_id_new = project_copy(owner_id = owner_id,
-                                    project_id = project_id,
+                                    project_id = project_this_id,
                                     project_name_new = project_name_new,
                                     api_key = api_key, host = host) %>%
         content() %>% pluck("id")
-
+      
       # #Upload app.sh
       project_file_upload_shell(owner_name, project_name_new, api_key, host)
-
+      
       # Create new app name
       app_name_new = app_create_name(project_name_new = project_name_new)
-
+      
       # Create app
       app_id_new = app_create(app_name = app_name_new,
                               project_id = project_id_new,
                               api_key = api_key, host = host) %>%
         content() %>% pluck("id")
-
+      
       # Start app
-      app_start(app_id = app_id_new, api_key = api_key, host = host)
-
+      app_start(app_id = app_id_new, hardware_tier_id = input$hardware_select,api_key = api_key, host = host)
+      
       # Schedule project deletion
       project_file_upload_delete(owner_name, project_name_new, api_key, host)
       schedulerun_create(owner_name, project_name_new, project_id_new, input$hrs_expire, api_key, host)
-
+      
       #reac_timer$start_app = reac_timer$start_app + 1
       
       # Clear table rows
@@ -204,11 +216,11 @@ server <- function(input, output, session) {
       refresh_project_tbl()
       
       
-
+      
     })
-
+    
   })
-
+  
   
   observe(priority = -99,{
     reac_table$rows_selected = getReactableState("table", "selected")
@@ -223,17 +235,17 @@ server <- function(input, output, session) {
   # observeEvent(reac_table$updated, {
   #   updateReactable("table", data = reac_data$project_tbl, selected = reac_table$rows_selected)
   # })
-
+  
   observeEvent(input$project_delete, priority = 5, {
     
     req(reac_table$rows_selected)
-
+    
     withProgress(message = 'Deleting selected apps', value = 1, {
-
+      
       table_selected_names = reac_data$project_tbl %>%
         slice(reac_table$rows_selected) %>%
         pull(name)
-
+      
       table_selected_names %>% map(~project_delete(owner_name = owner_name,
                                                    project_name = .,
                                                    api_key = api_key,
@@ -247,9 +259,9 @@ server <- function(input, output, session) {
       refresh_project_tbl()
       
     })
-
+    
   })
-
+  
 }
 
 shinyApp(ui, server)
