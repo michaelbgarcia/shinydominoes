@@ -1,7 +1,7 @@
 # app_master.R
 
 install.packages("reactable")
-devtools::install_github("michaelbgarcia/shinydominoes", ref = "main")
+devtools::install_github("michaelbgarcia/shinydominoes", ref = "main", upgrade = "never")
 
 library(shiny)
 library(shinydashboard)
