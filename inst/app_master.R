@@ -107,11 +107,11 @@ server <- function(input, output, session) {
                 name = colDef(name = "Project Name"),
                 app_status = colDef(name = "Status"),
                 app_url = colDef(
-                  name = "App",
-                  cell = function(value) {
-                    url = value
-                    tags$a(href = url, target = "_blank", "View app")
-                  }
+                  name = "App"
+                  # cell = function(value) {
+                  #   url = value
+                  #   tags$a(href = url, target = "_blank", "View app")
+                  # }
                 ),
                 time_left = colDef(name = "Time Remaining")
               )
