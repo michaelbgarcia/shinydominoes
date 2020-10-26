@@ -91,12 +91,6 @@ server <- function(input, output, session) {
   reac_table = reactiveValues(rows_selected = NA,
                               updated = 0)
   
-  # reac_timer = reactiveValues(tick = 0,
-  #                             initialize_app = 0,
-  #                             start_app = 0,
-  #                             stop_app = 0)
-  
-  
   # Initialize reactable
   output$table <- renderReactable({
     # req(reac_data$project_tbl)
@@ -128,140 +122,73 @@ server <- function(input, output, session) {
     invalidateLater(1000)
     isolate({
       # Refresh tbl
-      refresh_project_tbl()
+      reac_data$project_tbl = refresh_main_tbl(project_name = project_this, api_key = api_key, host = host)
+      updateReactable("table", data = reac_data$project_tbl, selected = reac_table$rows_selected)
     })
   })
   
-  refresh_project_tbl = function() {
-    reac_data$project_tbl = projects_get(api_key, host) %>%
-      content() %>% {
-        tibble(
-          id = map(., pluck("id")) %>% flatten_chr,
-          name = map(., pluck("name")) %>% flatten_chr,
-          app_status = as.character(NA),
-          app_url= as.character(NA),
-          time_left = as.integer(NA)
-        )
-      } %>%
-      bind_rows() %>%
-      filter(grepl(paste(project_this,"childproject",sep = "_"),name)) %>%
-      {
-        if(nrow(.) > 0) {
-          rowwise(.) %>%
-            mutate(app_status = app_get_details(id,api_key, host)$status,
-                   app_url = paste0(host,url_view_app(app_id = app_get_details(id,api_key, host)$id)),
-                   time_left = 
-                     projects_get_details(id, api_key, host) %>%
-                     content() %>%
-                     pluck("description") %>%
-                     gsub(pattern = "Project expires: ", replacement = "", x = .) %>%
-                     as.POSIXct(.) %>%
-                     difftime(.,Sys.time(), units="secs") %>%
-                     .POSIXct(xx = .) %>%
-                     format(., "%H:%M:%S")
-            ) %>%
-            ungroup()
-        } else {
-          .
-        }
-      }
+
+observeEvent(input$start_app, priority = 5, {
+  withProgress(message = 'Starting a new application instance', value = 1, {
     
+    app_init(project_name = project_this, 
+             project_id = project_this_id, 
+             owner_name = owner_name, 
+             owner_id = owner_id, 
+             hardware_tier_id = input$hardware_select, 
+             hrs_expire = input$hrs_expire,
+             api_key = api_key, 
+             host = host)
+    
+    # Clear table rows
+    reac_table$rows_selected = NA
+    
+    # Refresh tbl
+    reac_data$project_tbl = refresh_main_tbl(project_name = project_this, api_key = api_key, host = host)
     updateReactable("table", data = reac_data$project_tbl, selected = reac_table$rows_selected)
-    # isolate({
-    #   reac_table$updated = reac_table$updated + 1
-    # })
-  }
+
+  })
   
-  observeEvent(input$start_app, priority = 5, {
-    withProgress(message = 'Starting a new application instance', value = 1, {
-      
-      # Hash for project & app
-      hash = as.integer(Sys.time())
-      
-      # Create new project name
-      project_name_new = project_create_name(project_name = project_this, hash = hash)
-      
-      # Copy Project
-      project_id_new = project_copy(owner_id = owner_id,
-                                    project_id = project_this_id,
-                                    project_name_new = project_name_new,
-                                    api_key = api_key, host = host) %>%
-        content() %>% pluck("id")
-      
-      # #Upload app.sh
-      project_file_upload_shell(owner_name, project_name_new, api_key, host)
-      
-      # Create new app name
-      app_name_new = app_create_name(project_name_new = project_name_new)
-      
-      # Create app
-      app_id_new = app_create(app_name = app_name_new,
-                              project_id = project_id_new,
-                              api_key = api_key, host = host) %>%
-        content() %>% pluck("id")
-      
-      # Start app
-      app_start(app_id = app_id_new, hardware_tier_id = input$hardware_select,api_key = api_key, host = host)
-      
-      # Schedule project deletion
-      project_file_upload_delete(owner_name, project_name_new, api_key, host)
-      schedulerun_create(owner_name, project_name_new, project_id_new, input$hrs_expire, api_key, host)
-      
-      #reac_timer$start_app = reac_timer$start_app + 1
-      
-      # Clear table rows
-      reac_table$rows_selected = NA
-      
-      # Refresh tbl
-      refresh_project_tbl()
-      
-      
-      
-    })
+})
+
+
+observe(priority = -99,{
+  reac_table$rows_selected = getReactableState("table", "selected")
+  shinyjs::toggleState("project_delete", isTruthy(reac_table$rows_selected))
+})
+
+
+observe({
+  shinyjs::toggleState("project_delete", isTruthy(reac_table$rows_selected))
+})
+
+observeEvent(input$project_delete, priority = 5, {
+  
+  req(reac_table$rows_selected)
+  
+  withProgress(message = 'Deleting selected apps', value = 1, {
+    
+    table_selected_names = reac_data$project_tbl %>%
+      slice(reac_table$rows_selected) %>%
+      pull(name)
+    
+    table_selected_names %>% map(~project_delete(owner_name = owner_name,
+                                                 project_name = .,
+                                                 api_key = api_key,
+                                                 host = host))
+    
+    #reac_timer$start_app = reac_timer$start_app + 1
+    # Clear table rows
+    reac_table$rows_selected = NA
+    
+    # Refresh tbl
+    reac_data$project_tbl = refresh_main_tbl(project_name = project_this, api_key = api_key, host = host)
+    updateReactable("table", data = reac_data$project_tbl, selected = reac_table$rows_selected)
     
   })
   
-  
-  observe(priority = -99,{
-    reac_table$rows_selected = getReactableState("table", "selected")
-    shinyjs::toggleState("project_delete", isTruthy(reac_table$rows_selected))
-  })
-  
-  
-  observe({
-    shinyjs::toggleState("project_delete", isTruthy(reac_table$rows_selected))
-  })
-  
-  # observeEvent(reac_table$updated, {
-  #   updateReactable("table", data = reac_data$project_tbl, selected = reac_table$rows_selected)
-  # })
-  
-  observeEvent(input$project_delete, priority = 5, {
-    
-    req(reac_table$rows_selected)
-    
-    withProgress(message = 'Deleting selected apps', value = 1, {
-      
-      table_selected_names = reac_data$project_tbl %>%
-        slice(reac_table$rows_selected) %>%
-        pull(name)
-      
-      table_selected_names %>% map(~project_delete(owner_name = owner_name,
-                                                   project_name = .,
-                                                   api_key = api_key,
-                                                   host = host))
-      
-      #reac_timer$start_app = reac_timer$start_app + 1
-      # Clear table rows
-      reac_table$rows_selected = NA
-      
-      # Refresh tbl
-      refresh_project_tbl()
-      
-    })
-    
-  })
-  
+})
+
 }
 
 shinyApp(ui, server)

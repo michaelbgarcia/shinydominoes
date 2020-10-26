@@ -9,6 +9,12 @@
 #' @import purrr httr
 #' @rawNamespace import(jsonlite, except = flatten)
 
+
+#' @export
+app_get_url = function(app_id, host) {
+  url = paste0(host,ep_app_url(app_id = app_id))
+  return(url)
+}
 #' @export
 app_create = function(app_name, project_id, api_key, host) {
   

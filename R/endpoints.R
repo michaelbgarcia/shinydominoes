@@ -8,6 +8,7 @@
 #' @param project_name name of parent project
 #' @param owner_name name of owner
 #' @param file_path destination path used for file upload
+#' 
 #' @return url endpoints of Domino Data Labs API
 
 ep_self = function() {paste0("/v4/users/self")}
@@ -27,4 +28,8 @@ ep_project_id = function(owner_name, project_name) {
 ep_project_summary = function(project_id) {paste0("/v4/projects/",project_id)}
 ep_project_list = function() {paste0("/v4/gateway/projects?relationship=Owned&showCompleted=false")}
 ep_scheduledrun_create = function(owner_name, project_name) {paste0("/u/mgarc135/",project_name,"/scheduledruns")}
-#ep_scheduledrun_delete = function(owner_name, run_id) {paste0("/u/mgarc135/PatientMapping_Backup/scheduledruns/unschedule")}
+
+#' @export
+ep_app_url = function(app_id) {paste0("/modelproducts/",app_id)}
+#' @export
+ep_project_url = function(owner_name, project_name) {paste("u",owner_name,project_name, sep = "/")}
