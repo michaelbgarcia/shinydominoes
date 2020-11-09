@@ -1,6 +1,4 @@
 # app_master.R
-
-install.packages("reactable")
 devtools::install_github("michaelbgarcia/shinydominoes", ref = "main", upgrade = "always")
 
 library(shiny)

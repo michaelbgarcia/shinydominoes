@@ -20,8 +20,7 @@
 #' 
 #' @export
 refresh_main_tbl = function(project_name, api_key, host) {
-  my_tbl = projects_get(api_key, host) %>%
-    content() %>% {
+  my_tbl = projects_get(api_key, host)$content %>% {
       tibble(
         id = map(., pluck("id")) %>% flatten_chr,
         name = map(., pluck("name")) %>% flatten_chr,
@@ -38,8 +37,7 @@ refresh_main_tbl = function(project_name, api_key, host) {
           mutate(app_status = app_get_details(id,api_key, host)$status,
                  app_url = app_get_url(app_id = app_get_details(id,api_key, host)$id, host),
                  time_left = 
-                   projects_get_details(id, api_key, host) %>%
-                   content() %>%
+                   projects_get_details(id, api_key, host)$content %>%
                    pluck("description") %>%
                    gsub(pattern = "Project expires: ", replacement = "", x = .) %>%
                    as.POSIXct(.) %>%

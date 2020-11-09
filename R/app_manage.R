@@ -41,9 +41,9 @@ app_create = function(app_name, project_id, api_key, host) {
     )
   )
   
-  
-  POST(
-    url = paste0(host,ep_app_create()),
+  ep = ep_app_create()
+  resp = POST(
+    url = paste0(host,ep),
     add_headers(`X-Domino-Api-Key` = api_key),
     body = toJSON(body_list, auto_unbox = TRUE),
     content_type("application/json"),
@@ -51,54 +51,133 @@ app_create = function(app_name, project_id, api_key, host) {
     config(http_version=2)
   )
   
+  parsed = content(resp)
+  
+  structure(
+    list(
+      content = parsed,
+      path = ep,
+      response = resp
+    ),
+    class = "domino_api"
+  )
+  
 }
 #' @export
 app_start = function(app_id, hardware_tier_id, api_key, host) {
   if(missing(hardware_tier_id)) hardware_tier_id = "medium-k8s"
   
-  url = paste0(host,ep_app_start(app_id))
+  ep = ep_app_start(app_id)
+  url = paste0(host,ep)
   
-  POST(url = url,
+  resp = POST(url = url,
        add_headers(`X-Domino-Api-Key` = api_key),
        body = toJSON(list(hardwareTierId = hardware_tier_id), auto_unbox = TRUE),
        content_type("application/json")
   )
+  parsed = content(resp)
+  
+  structure(
+    list(
+      content = parsed,
+      path = ep,
+      response = resp
+    ),
+    class = "domino_api"
+  )
 }
+
 #' @export
 app_create_name = function(project_name_new, hash) {
   app_name = paste(project_name_new,"app", sep = "_")
   return(app_name)
 }
+
 #' @export
 app_get_details = function(project_id, api_key, host) {
   
-  GET(
-    url = paste0(host,ep_app_list(project_id = project_id)),
+  # GET(
+  #   url = paste0(host,ep_app_list(project_id = project_id)),
+  #   add_headers(`X-Domino-Api-Key` = api_key),
+  #   content_type("application/json")
+  # ) %>% content() %>% pluck(1)
+  
+  ep = ep_app_list(project_id = project_id)
+  resp = GET(
+    url = paste0(host,ep),
     add_headers(`X-Domino-Api-Key` = api_key),
     content_type("application/json")
-  ) %>% content() %>% pluck(1)
+  )
+  
+  parsed = content(resp) %>% pluck(1)
+  
+  structure(
+    list(
+      content = parsed,
+      path = ep,
+      response = resp
+    ),
+    class = "domino_api"
+  )
 }
 
 #' @export
 get_app_id = function(project_name, owner_name, api_key, host) {
-  app_id = GET(
-    url = paste(host,ep_app_list(project_id = get_project_id(owner_name, project_name, api_key, host)), sep = "/"),
+  # app_id = GET(
+  #   url = paste(host,ep_app_list(project_id = get_project_id(owner_name, project_name, api_key, host)), sep = "/"),
+  #   add_headers(`X-Domino-Api-Key` = api_key),
+  #   content_type("application/json")
+  # ) %>% content() %>% pluck(1, "id")
+  
+  ep = ep_app_list(project_id = get_project_id(owner_name, project_name, api_key, host))
+  resp = GET(
+    url = paste0(host,ep),
     add_headers(`X-Domino-Api-Key` = api_key),
     content_type("application/json")
-  ) %>% content() %>% pluck(1, "id")
+  )
   
-  return(app_id)
+  parsed = content(resp) %>% pluck(1, "id")
+  
+  structure(
+    list(
+      content = parsed,
+      path = ep,
+      response = resp
+    ),
+    class = "domino_api"
+  )
+  
+  # return(app_id)
 }
 
 #' @export
 get_app_status = function(project_name, owner_name, api_key, host) {
-  app_status = GET(
-    url = paste(host,ep_app_list(project_id = get_project_id(owner_name, project_name, api_key, host)), sep = "/"),
+  # app_status = GET(
+  #   url = paste(host,ep_app_list(project_id = get_project_id(owner_name, project_name, api_key, host)), sep = "/"),
+  #   add_headers(`X-Domino-Api-Key` = api_key),
+  #   content_type("application/json")
+  # ) %>% content() %>% pluck(1, "status")
+  
+  ep = ep_app_list(project_id = get_project_id(owner_name, project_name, api_key, host))
+  
+  resp = GET(
+    url = paste0(host,ep),
     add_headers(`X-Domino-Api-Key` = api_key),
     content_type("application/json")
-  ) %>% content() %>% pluck(1, "status")
+  )
   
-  return(app_status)
+  parsed = content(resp) %>% pluck(1, "status")
+  
+  structure(
+    list(
+      content = parsed,
+      path = ep,
+      response = resp
+    ),
+    class = "domino_api"
+  )
+  
+  # return(app_status)
 }
 
 

@@ -16,36 +16,73 @@
 # Get project list ----
 #' @export
 projects_get = function(api_key, host) {
-  GET(
-    url = paste0(host,ep_project_list()),
+  ep = ep_project_list()
+  resp = GET(
+    url = paste0(host,ep),
     add_headers(`X-Domino-Api-Key` = api_key),
     content_type("application/json")
+  )
+  
+  parsed = content(resp)
+  
+  structure(
+    list(
+      content = parsed,
+      path = ep,
+      response = resp
+    ),
+    class = "domino_api"
   )
 }
 
 # Get project summary
 #' @export
 projects_get_details = function(project_id, api_key, host) {
-  GET(
-    url = paste0(host,ep_project_summary(project_id)),
+  
+  ep = ep_project_summary(project_id)
+  resp = GET(
+    url = paste0(host,ep),
     add_headers(`X-Domino-Api-Key` = api_key),
     content_type("application/json")
+  )
+  
+  parsed = content(resp)
+  
+  structure(
+    list(
+      content = parsed,
+      path = ep,
+      response = resp
+    ),
+    class = "domino_api"
   )
 }
 
 # Get project hardware tiers
 #' @export
 projects_get_hardware = function(project_id, api_key, host) {
-  GET(
-    url = paste0(host,ep_project_hardware(project_id)),
+  ep = ep_project_hardware(project_id)
+  resp = GET(
+    url = paste0(host,ep),
     add_headers(`X-Domino-Api-Key` = api_key),
     content_type("application/json")
+  )
+  
+  parsed = content(resp)
+  
+  structure(
+    list(
+      content = parsed,
+      path = ep,
+      response = resp
+    ),
+    class = "domino_api"
   )
 }
 
 #' @export
 projects_get_hardware_tbl = function(project_id, api_key, host) {
-  projects_get_hardware(project_id, api_key, host) %>% content() %>%
+  projects_get_hardware(project_id, api_key, host)$content %>%
     {
       tibble(
         id = map(., pluck("hardwareTier")) %>% map(., pluck("id")) %>% flatten_chr(),
@@ -75,13 +112,25 @@ schedulerun_create = function(owner_name, project_name, project_id, hrs_expire, 
     publishModelId =  ''
   )
   
-  POST(
-    url = paste0(host,ep_scheduledrun_create(owner_name, project_name)),
+  ep_post = ep_scheduledrun_create(owner_name, project_name)
+  resp_post = POST(
+    url = paste0(host,ep_post),
     add_headers(`X-Domino-Api-Key` = api_key),
     body = toJSON(body_list, auto_unbox = TRUE),
     content_type("application/json"),
     verbose(),
     config(http_version=2)
+  )
+  
+  parsed_post = content(resp_post)
+  
+  structure(
+    list(
+      content = parsed_post,
+      path = ep_post,
+      response = resp_post
+    ),
+    class = "domino_api"
   )
   
   # Update description of project with time expire
@@ -92,8 +141,9 @@ schedulerun_create = function(owner_name, project_name, project_id, hrs_expire, 
     description = paste0("Project expires: ",stop_time)
   )
   
-  PATCH(
-    url = paste0(host,ep_project_summary(project_id)),
+  ep_patch = ep_project_summary(project_id)
+  resp_patch = PATCH(
+    url = paste0(host,ep_patch),
     add_headers(`X-Domino-Api-Key` = api_key),
     body = toJSON(body_list_patch, auto_unbox = TRUE),
     content_type("application/json"),
@@ -101,6 +151,16 @@ schedulerun_create = function(owner_name, project_name, project_id, hrs_expire, 
     config(http_version=2)
   )
   
+  parsed_patch = content(resp_patch)
+  
+  structure(
+    list(
+      content = parsed_patch,
+      path = ep_patch,
+      response = resp_patch
+    ),
+    class = "domino_api"
+  )
 }
 
 # app.sh File upload ----
@@ -116,11 +176,24 @@ project_file_upload_shell = function(owner_name, project_name, api_key, host) {
   
   shiny_app = readLines(".shinydominoes_config")[[1]]
   file = paste0("R -e 'shiny::runApp(\"",shiny_app,"\", port=8888, host=\"0.0.0.0\")'")
-  PUT(
-    url = paste0(host,ep_file_upload(owner_name = owner_name, project_name = project_name, file_path = "app.sh")),
+  
+  ep = ep_file_upload(owner_name = owner_name, project_name = project_name, file_path = "app.sh")
+  resp = PUT(
+    url = paste0(host,ep),
     body = file,
     add_headers(`X-Domino-Api-Key` = api_key),
     content_type("application/json")
+  )
+  
+  parsed = content(resp)
+  
+  structure(
+    list(
+      content = parsed,
+      path = ep,
+      response = resp
+    ),
+    class = "domino_api"
   )
 }
 
@@ -132,11 +205,23 @@ project_file_upload_delete = function(owner_name, project_name, api_key, host) {
     stop("Could not find the project delete file. Try re-installing `shinydominoes`.", call. = FALSE)
   }
   
-  PUT(
-    url = paste0(host,ep_file_upload(owner_name = owner_name, project_name = project_name, file_path = "domino_project_delete.R")),
+  ep = ep_file_upload(owner_name = owner_name, project_name = project_name, file_path = "domino_project_delete.R")
+  resp = PUT(
+    url = paste0(host,ep),
     body = upload_file(appDir),
     add_headers(`X-Domino-Api-Key` = api_key),
     content_type("application/json")
+  )
+  
+  parsed = content(resp)
+  
+  structure(
+    list(
+      content = parsed,
+      path = ep,
+      response = resp
+    ),
+    class = "domino_api"
   )
 }
 
@@ -162,10 +247,10 @@ project_copy = function(owner_id, project_id, project_name_new, api_key, host) {
                    # )
   )
   
-  url = paste0(host,ep_project_copy(project_id))
+  ep = ep_project_copy(project_id)
+  url = paste0(host,ep)
   
-  try({
-    POST(
+  resp = POST(
       url = url,
       add_headers(`X-Domino-Api-Key` = api_key),
       body = toJSON(body_list, auto_unbox = TRUE),
@@ -173,23 +258,40 @@ project_copy = function(owner_id, project_id, project_name_new, api_key, host) {
       verbose(),
       config(http_version=2)
     )
-  })
-  
-  # result_text = paste0("Status: ", response$success,"\n",
-  #                      "Details: ", response$message,"\n")
-  # cat(result_text)
-  
+    
+    parsed = content(resp)
+    
+    structure(
+      list(
+        content = parsed,
+        path = ep,
+        response = resp
+      ),
+      class = "domino_api"
+    )
+
 }
 
 # Delete project (be careful, need to have check for child projects only)
 #' @export
 project_delete = function(owner_name, project_name, api_key, host) {
-  response = DELETE(
-    url = paste0(host,ep_project_delete(owner_name = owner_name, project_name = project_name)),
+  ep = ep_project_delete(owner_name = owner_name, project_name = project_name)
+  resp = DELETE(
+    url = paste0(host,ep),
     add_headers(`X-Domino-Api-Key` = api_key)
   )
   
-  return(response)
+  parsed = content(resp)
+  
+  structure(
+    list(
+      content = parsed,
+      path = ep,
+      response = resp
+    ),
+    class = "domino_api"
+  )
+  
 }
 
 #' @export
@@ -201,22 +303,42 @@ get_project_url = function(owner_name, project_name, host) {
 # Get owner id----
 #' @export
 get_owner_id = function(api_key, host) {
-  owner_id = GET(
-    url = paste0(host,ep_self()),
+  ep = ep_self()
+  resp = GET(
+    url = paste0(host,ep),
     add_headers(`X-Domino-Api-Key` = api_key),
     content_type("application/json")
-  ) %>% content() %>% pluck("id")
-  return(owner_id)
+  )
+  
+  parsed = content(resp) %>% pluck("id")
+  
+  structure(
+    list(
+      content = parsed,
+      path = ep,
+      response = resp
+    ),
+    class = "domino_api"
+  )
 }
 
 #' @export
 get_project_id = function(owner_name, project_name, api_key, host) {
-  #browser()
-  project_id = GET(
-    url = paste0(host,ep_project_id(owner_name = owner_name, project_name = project_name)),
+  ep = ep_project_id(owner_name = owner_name, project_name = project_name)
+  resp = GET(
+    url = paste0(host,ep),
     add_headers(`X-Domino-Api-Key` = api_key),
     content_type("application/json")
-  ) %>% content() %>% pluck("id")
+  )
   
-  return(project_id)
+  parsed = content(resp) %>% pluck("id")
+  
+  structure(
+    list(
+      content = parsed,
+      path = ep,
+      response = resp
+    ),
+    class = "domino_api"
+  )
 }

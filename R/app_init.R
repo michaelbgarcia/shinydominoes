@@ -31,8 +31,7 @@ app_init = function(project_name, project_id,
   project_id_new = project_copy(owner_id = owner_id,
                                 project_id = project_id,
                                 project_name_new = project_name_new,
-                                api_key = api_key, host = host) %>%
-    content() %>% 
+                                api_key = api_key, host = host)$content %>% 
     pluck("id")
   
   # #Upload app.sh
@@ -44,8 +43,7 @@ app_init = function(project_name, project_id,
   # Create app
   app_id_new = app_create(app_name = app_name_new,
                           project_id = project_id_new,
-                          api_key = api_key, host = host) %>%
-    content() %>% 
+                          api_key = api_key, host = host)$content %>%
     pluck("id")
   
   # Start app
