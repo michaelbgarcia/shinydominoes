@@ -16,12 +16,12 @@ library(shinydominoes)
 host = "https://opendatasciencelab.jnj.com"
 api_key = Sys.getenv("DOMINO_USER_API_KEY")
 owner_name = Sys.getenv("DOMINO_PROJECT_OWNER")
-owner_id = get_owner_id(api_key, host)
+owner_id = get_owner_id(api_key, host)$content
 project_this = Sys.getenv("DOMINO_PROJECT_NAME")
 project_this_id = get_project_id(owner_name = owner_name, 
                                  project_name = project_this, 
                                  api_key = api_key, 
-                                 host = host)
+                                 host = host)$content
 
 
 # Get hardware Tiers

@@ -34,8 +34,8 @@ refresh_main_tbl = function(project_name, api_key, host) {
     {
       if(nrow(.) > 0) {
         rowwise(.) %>%
-          mutate(app_status = app_get_details(id,api_key, host)$status,
-                 app_url = app_get_url(app_id = app_get_details(id,api_key, host)$id, host),
+          mutate(app_status = app_get_details(id,api_key, host)$content$status,
+                 app_url = app_get_url(app_id = app_get_details(id,api_key, host)$content$id, host),
                  time_left = 
                    projects_get_details(id, api_key, host)$content %>%
                    pluck("description") %>%
