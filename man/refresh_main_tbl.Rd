@@ -24,7 +24,7 @@ refresh_main_tbl(project_name, api_key, host)
 \item{hrs_expire}{hours to keep application open}
 }
 \value{
-success or failure messages
+table of active child apps created from shinydominoes
 }
 \description{
 Refreshes tbl in the master app control center

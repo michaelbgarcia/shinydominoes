@@ -16,7 +16,7 @@
 #' @importFrom dplyr filter ungroup rowwise bind_rows tibble mutate
 #' 
 #' @rawNamespace import(jsonlite, except = flatten)
-#' @return success or failure messages
+#' @return table of active child apps created from shinydominoes
 #' 
 #' @export
 refresh_main_tbl = function(project_name, api_key, host) {
